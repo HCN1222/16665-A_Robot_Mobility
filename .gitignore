@@ -1,0 +1,43 @@
+# ROS / catkin / colcon
+devel/
+build/
+install/
+log/
+.catkin_workspace
+CATKIN_IGNORE
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# C++ / CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.o
+*.obj
+*.so
+*.a
+*.out
+*.exe
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ROS bag files / logs
+*.bag
+*.log
