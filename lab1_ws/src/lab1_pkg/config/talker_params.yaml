@@ -1,0 +1,4 @@
+talker:
+  ros__parameters:
+    v: 1.0
+    d: 0.5
