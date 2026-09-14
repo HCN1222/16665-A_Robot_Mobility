@@ -44,3 +44,6 @@ Thumbs.db
 
 # ROS 2 workspaces
 *_ws/
+
+#f1tenth_gym
+f1tength_gym
