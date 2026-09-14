@@ -7,7 +7,7 @@ from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
 
 class WallFollow(Node):
-    """
+    """ 
     Implement Wall Following on the car
     """
     def __init__(self):
@@ -21,8 +21,6 @@ class WallFollow(Node):
         self.drive_pub = self.create_publisher(AckermannDriveStamped, drive_topic, 10)
 
         # TODO: set PID gains
-        # steering angle [rad] per metre of distance error; tune at runtime with
-        # `ros2 run wall_follow wall_follow_node.py --ros-args -p kp:=1.2 -p kd:=0.1`
         self.declare_parameter('kp', 0.9)
         self.declare_parameter('kd', 0.15)
         self.declare_parameter('ki', 0.0)
@@ -34,23 +32,29 @@ class WallFollow(Node):
         self.integral = 0.0
         self.prev_error = 0.0
         self.error = 0.0
-        self.prev_time = None      # time of the previous PID update, for dt
+        self.prev_time = None
 
         # TODO: store any necessary values you think you'll need
-        self.declare_parameter('desired_distance', 0.85) # set point: distance to the LEFT wall [m] (Levine hallway is 1.7 m wide)
-        self.declare_parameter('lookahead', 0.8)         # L: project the car ahead by this much [m]
-        self.declare_parameter('theta_deg', 45.0)        # angle between beams a and b (0 < theta <= 70)
-        self.declare_parameter('max_speed', 1.5)         # speed on straights [m/s]
-        self.declare_parameter('max_steering_deg', 24.0) # sim servo limit is +/-0.4189 rad
-        self.declare_parameter('integral_limit', 1.0)    # anti-windup clamp on the integral term
+        
+        # Levine hallway is 1.7 m wide
+        self.declare_parameter('desired_distance', 0.85)
+        # predict future position for earlier turn
+        self.declare_parameter('lookahead', 0.8)
+        # angle between beams a and b
+        self.declare_parameter('theta_deg', 45.0)
+        self.declare_parameter('max_speed', 1.5)
+        # sim servo limit is +/-0.4189 rad ~= +/-24 deg
+        self.declare_parameter('max_steering_deg', 24.0)
+        self.declare_parameter('integral_limit', 1.0)
+
         self.desired_distance = self.get_parameter('desired_distance').value
         self.lookahead = self.get_parameter('lookahead').value
         self.theta = np.radians(self.get_parameter('theta_deg').value)
         self.max_speed = self.get_parameter('max_speed').value
         self.max_steering = np.radians(self.get_parameter('max_steering_deg').value)
         self.integral_limit = self.get_parameter('integral_limit').value
-        self.steering_angle = 0.0  # last commanded steering angle, used for the speed schedule
-        # LaserScan geometry, filled in from each incoming message
+
+        self.steering_angle = 0.0
         self.angle_min = 0.0
         self.angle_increment = 1.0
         self.range_min = 0.0
@@ -73,14 +77,15 @@ class WallFollow(Node):
         n = len(range_data)
         idx = int(round((angle - self.angle_min) / self.angle_increment))
         idx = min(max(idx, 0), n - 1)
-        # walk outwards from idx until we find a finite, in-range measurement
+
         for offset in range(0, 10):
             for i in (idx - offset, idx + offset):
                 if 0 <= i < n:
                     r = range_data[i]
                     if np.isfinite(r) and self.range_min <= r <= self.range_max:
                         return float(r)
-        # no usable beam nearby: treat it as "no wall in sight"
+                    
+        # if no valid data
         return float(self.range_max)
 
     def get_error(self, range_data, dist):
@@ -101,16 +106,13 @@ class WallFollow(Node):
         b = self.get_range(range_data, np.pi / 2.0)
         a = self.get_range(range_data, np.pi / 2.0 - self.theta)
 
-        # alpha: angle between the car's x-axis and the wall (mirror image of the README's
-        # right-wall figure); alpha < 0 means the car is heading towards the left wall
+        # From Readme ^_^
         alpha = np.arctan2(a * np.cos(self.theta) - b, a * np.sin(self.theta))
-        D_t = b * np.cos(alpha)                          # current distance to the wall
-        D_t1 = D_t + self.lookahead * np.sin(alpha)      # projected distance after lookahead L
+        D_t = b * np.cos(alpha)
+        D_t1 = D_t + self.lookahead * np.sin(alpha)
 
-        # The README's e = desired - D is written for a RIGHT wall. With the wall on the LEFT
-        # the sign flips so that a positive steering angle (left) reduces the error:
-        #   error > 0 -> too far from the left wall  -> steer left  (positive angle)
-        #   error < 0 -> too close to the left wall  -> steer right (negative angle)
+        # The README's e = desired - D is written for a right wall
+        # For left wll following, we have to flip it
         return D_t1 - dist
 
     def pid_control(self, error, velocity):
@@ -173,8 +175,10 @@ class WallFollow(Node):
         steer_deg = abs(np.degrees(self.steering_angle))
         if steer_deg < 10.0:
             velocity = self.max_speed
+        # 10 ~ 20
         elif steer_deg < 20.0:
             velocity = min(self.max_speed, 1.0)
+        # > 20
         else:
             velocity = min(self.max_speed, 0.5)
 

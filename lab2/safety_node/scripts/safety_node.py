@@ -31,25 +31,18 @@ class SafetyNode(Node):
         self.scan_sub = self.create_subscription(LaserScan, '/scan', self.scan_callback, 10)
         self.odom_sub = self.create_subscription(Odometry, '/ego_racecar/odom', self.odom_callback, 10)
 
-        self.yaw_rate = 0.     # yaw rate [rad/s] from odom, used for the lateral velocity (Deliverable 4)
-        self.braking = False   # so the brake warning is logged once per event
+        self.yaw_rate = 0.
+        self.braking = False
 
-        # Tunable parameters: override with `--ros-args -p ttc_threshold:=0.8` etc.
-        # brake when the smallest iTTC in the cone drops below this many seconds
         self.declare_parameter('ttc_threshold', 1.0)
-        # only beams within +/- this angle of the direction of travel are considered:
-        # the projection v*cos(theta) assumes a stationary point on every beam, so a beam
-        # hitting a parallel wall obliquely produces a spurious small iTTC; the cone keeps
-        # the node from false-positive braking while driving down a hallway
         self.declare_parameter('fov_half_angle_deg', 45.0)
-        # Deliverable 4: project the complete (v_x, v_y) velocity vector onto each beam
         self.declare_parameter('use_lateral_velocity', True)
-        # kinematic bicycle geometry, CoM == lidar mount (see launch/ego_racecar.xacro)
+        # Assumption from Readme
+        # a kinematic bicycle model with no lateral slip at the tires,
+        # the Centre of Mass (CoM) is at the same position as the lidar sensor mount,
+        # l_r = 0.275 and l_f = 0.055 (refer to launch/ego_racecar.xacro)
         self.declare_parameter('l_r', 0.275)
         self.declare_parameter('l_f', 0.055)
-        # keep braking whenever any beam in the cone is closer than this, even if the
-        # computed iTTC looks safe (e.g. once stopped, closing speed is 0 -> iTTC = inf,
-        # but a still-held throttle command would otherwise let the car creep back in)
         self.declare_parameter('min_stop_distance', 0.4)
 
     def odom_callback(self, odom_msg):
@@ -65,26 +58,20 @@ class SafetyNode(Node):
         ranges = np.asarray(scan_msg.ranges, dtype=np.float64)
         angles = scan_msg.angle_min + np.arange(len(ranges)) * scan_msg.angle_increment
 
-        # Velocity of the lidar/CoM in the body frame. For a no-slip kinematic bicycle with
-        # rear-axle speed v and steering angle delta, yaw rate omega = v*tan(delta)/(l_f+l_r)
-        # and the lateral velocity of a point l_r ahead of the rear axle is
-        #   v_y = omega*l_r = v*tan(delta)*l_r/(l_f+l_r).
-        # Odometry already reports omega, so it is used directly instead of delta.
+        # yaw rate omega = v*tan(delta)/(l_f+l_r)
+        # v_y = omega*l_r = v*tan(delta)*l_r/(l_f+l_r).
         v_x = self.speed
         v_y = self.yaw_rate * self.get_parameter('l_r').value \
             if self.get_parameter('use_lateral_velocity').value else 0.0
 
-        # range rate = projection of the velocity vector onto each beam, negated:
-        # a beam pointing where we are heading has a shrinking range (negative rate)
         range_rate = -(v_x * np.cos(angles) + v_y * np.sin(angles))
         closing = np.maximum(-range_rate, 0.0)   # {-rdot}_+
 
         # drop inf/nan and out-of-range beams, beams outside the cone, and beams we are
         # moving away from (closing == 0 -> iTTC = inf)
-        if v_x >= 0.0:
-            in_cone = np.abs(angles) <= half_fov
-        else:  # reversing: look at the rear-facing beams instead
-            in_cone = np.abs(angles) >= np.pi - half_fov
+        in_cone = ( np.abs(angles) <= half_fov ) if v_x >= 0.0 \
+            else np.abs(angles) >= np.pi - half_fov
+
         valid = (np.isfinite(ranges)
                  & (ranges >= scan_msg.range_min) & (ranges <= scan_msg.range_max)
                  & in_cone & (closing > 1e-3))
@@ -94,8 +81,6 @@ class SafetyNode(Node):
         i_min = int(np.argmin(ttc))
         min_ttc = ttc[i_min]
 
-        # proximity floor: an obstacle already inside this range in the cone keeps the
-        # brake on regardless of iTTC (see min_stop_distance above)
         min_stop_distance = self.get_parameter('min_stop_distance').value
         in_cone_ranges = ranges[np.isfinite(ranges) & (ranges >= scan_msg.range_min)
                                  & (ranges <= scan_msg.range_max) & in_cone]
