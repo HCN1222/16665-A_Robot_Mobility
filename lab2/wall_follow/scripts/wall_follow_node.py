@@ -5,6 +5,7 @@ from rclpy.node import Node
 import numpy as np
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
+from std_msgs.msg import Bool
 
 class WallFollow(Node):
     """ 
@@ -19,6 +20,8 @@ class WallFollow(Node):
         # TODO: create subscribers and publishers
         self.scan_sub = self.create_subscription(LaserScan, lidarscan_topic, self.scan_callback, 10)
         self.drive_pub = self.create_publisher(AckermannDriveStamped, drive_topic, 10)
+        self.brake_sub = self.create_subscription(Bool, '/emergency_brake', self.brake_callback, 10)
+        self.emergency_brake = False
 
         # TODO: set PID gains
         self.declare_parameter('kp', 0.9)
@@ -59,6 +62,9 @@ class WallFollow(Node):
         self.angle_increment = 1.0
         self.range_min = 0.0
         self.range_max = np.inf
+
+    def brake_callback(self, msg):
+        self.emergency_brake = msg.data
 
     def get_range(self, range_data, angle):
         """
@@ -161,6 +167,15 @@ class WallFollow(Node):
         Returns:
             None
         """
+        if self.emergency_brake:
+            drive_msg = AckermannDriveStamped()
+            drive_msg.header.stamp = self.get_clock().now().to_msg()
+            drive_msg.header.frame_id = 'ego_racecar/base_link'
+            drive_msg.drive.steering_angle = 0.0
+            drive_msg.drive.speed = 0.0
+            self.drive_pub.publish(drive_msg)
+            return
+
         # TODO: replace with error calculated by get_error()
         self.angle_min = msg.angle_min
         self.angle_increment = msg.angle_increment

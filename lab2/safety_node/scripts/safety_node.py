@@ -7,7 +7,8 @@ import numpy as np
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
-
+from std_msgs.msg import Bool
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy
 
 class SafetyNode(Node):
     """
@@ -31,8 +32,11 @@ class SafetyNode(Node):
         self.scan_sub = self.create_subscription(LaserScan, '/scan', self.scan_callback, 10)
         self.odom_sub = self.create_subscription(Odometry, '/ego_racecar/odom', self.odom_callback, 10)
 
+        # brake_qos = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
+        self.brake_pub = self.create_publisher(Bool, '/emergency_brake', 1)
+
         self.yaw_rate = 0.
-        self.braking = False
+        # self.braking = False
 
         self.declare_parameter('ttc_threshold', 1.0)
         self.declare_parameter('fov_half_angle_deg', 45.0)
@@ -88,19 +92,21 @@ class SafetyNode(Node):
 
         # TODO: publish command to brake
         if min_ttc < ttc_threshold or too_close:
-            if not self.braking:
-                self.get_logger().warn(
-                    'EMERGENCY BRAKE: iTTC=%.2fs at %.0f deg (range %.2f m, v_x=%.2f, v_y=%.2f)'
-                    % (min_ttc, np.degrees(angles[i_min]), ranges[i_min], v_x, v_y))
-                self.braking = True
+            # if not self.braking:
+            #     self.get_logger().warn(
+            #         'EMERGENCY BRAKE: iTTC=%.2fs at %.0f deg (range %.2f m, v_x=%.2f, v_y=%.2f)'
+            #         % (min_ttc, np.degrees(angles[i_min]), ranges[i_min], v_x, v_y))
+            # self.braking = True
+            self.brake_pub.publish(Bool(data=True))
             brake_msg = AckermannDriveStamped()
             brake_msg.header.stamp = self.get_clock().now().to_msg()
             brake_msg.drive.speed = 0.0
             brake_msg.drive.steering_angle = 0.0
             self.drive_pub.publish(brake_msg)
         else:
-            # publish nothing while safe so we never fight teleop / the wall follower
-            self.braking = False
+            # if self.braking:
+            self.brake_pub.publish(Bool(data=False))
+            # self.braking = False
 
 def main(args=None):
     rclpy.init(args=args)
