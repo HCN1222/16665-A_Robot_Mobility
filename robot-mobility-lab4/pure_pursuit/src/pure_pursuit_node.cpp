@@ -29,7 +29,7 @@ public:
         // TODO: create ROS subscribers and publishers
     }
 
-    void pose_callback(const geometry_msgs::msg::PoseStamped::ConstPtr &pose_msg)
+    void pose_callback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr &pose_msg)
     {
         // TODO: find the current waypoint to track using methods mentioned in lecture
 
