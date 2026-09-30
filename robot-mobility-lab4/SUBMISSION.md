@@ -9,13 +9,13 @@ must show.
 **Deliverable A1 (simulation):** Pure Pursuit completing a full lap in sim, with
 both the full waypoint set and the currently tracked waypoint visualized.
 
-[FILL ME IN](https://youtu.be/your-link-here)
+[https://youtu.be/PKH-VaAvdCI](https://youtu.be/PKH-VaAvdCI)
 
 **Deliverable A3 (team, hardware):** The real car following waypoints in the AI
 Makerspace using the provided particle filter, shown alongside RViz with the map
 and waypoint markers.
 
-[FILL ME IN](https://youtu.be/your-link-here)
+[https://youtu.be/r8tLKzRWAZ4](https://youtu.be/r8tLKzRWAZ4)
 
 ## Part B: Motion Planning (RRT)
 
@@ -23,12 +23,12 @@ and waypoint markers.
 showing obstacle avoidance and a visualization of the planned paths and goal
 point.
 
-[FILL ME IN](https://youtu.be/your-link-here)
+[https://youtu.be/Ro4Om8so6EE](https://youtu.be/Ro4Om8so6EE)
 
 **Deliverable B3 (group, hardware):** The car running RRT in the AIMS hallway
 with at least one obstacle, demonstrating obstacle avoidance.
 
-[FILL ME IN](https://youtu.be/your-link-here)
+[https://youtu.be/yrSepmlVHqQ](https://youtu.be/yrSepmlVHqQ)
 
 ---
 
@@ -42,10 +42,14 @@ top of each file. The C++ skeletons are left as provided (they still compile).
 
 ```bash
 colcon build --packages-select pure_pursuit motion_planning && source install/setup.bash
-ros2 launch pure_pursuit pure_pursuit_launch.py      # Part A (+ RViz)
-ros2 launch motion_planning rrt_launch.py            # Part B (+ RViz), do not run Part A too
+ros2 launch pure_pursuit pure_pursuit_launch.py      # Part A
+ros2 launch motion_planning rrt_launch.py            # Part B, do not run Part A too
 ros2 run pure_pursuit waypoint_logger.py             # record a lap -> ./waypoints.csv
 ```
+
+The launch files do not start RViz. Ready-made RViz configs with all displays:
+`pure_pursuit/rviz/pure_pursuit_sim.rviz` and `motion_planning/rviz/rrt_sim.rviz`
+(RViz: File > Open Config).
 
 Part B was tested on `motion_planning/maps/levine_rrt.yaml`: Levine with four
 boxes, each attached to a wall and blocking the route, leaving about 0.9 m on
