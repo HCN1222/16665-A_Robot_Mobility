@@ -23,6 +23,8 @@ and waypoint markers.
 showing obstacle avoidance and a visualization of the planned paths and goal
 point.
 
+Implemented RRT *
+
 [https://youtu.be/RTa0ZZRp1Og](https://youtu.be/RTa0ZZRp1Og)
 
 **Deliverable B3 (group, hardware):** The car running RRT in the AIMS hallway
