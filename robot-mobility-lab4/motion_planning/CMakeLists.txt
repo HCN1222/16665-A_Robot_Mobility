@@ -56,8 +56,8 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# Install launch files, the obstacle test map and the RViz config
-install(DIRECTORY launch maps rviz
+# Install launch files and the obstacle test map
+install(DIRECTORY launch maps
   DESTINATION share/${PROJECT_NAME}
 )
 

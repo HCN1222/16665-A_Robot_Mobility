@@ -2,16 +2,6 @@
 """
 This file contains the class definition for tree nodes and RRT
 Before you start, please read: https://arxiv.org/pdf/1105.1186.pdf
-
-How it runs (simulator):
-  scan_callback  every PLAN_PERIOD s : occupancy grid in the car frame
-  pose_callback  every pose message  : when a new grid is ready, plan():
-      goal = waypoint GOAL_DISTANCE ahead on the global route
-      route to the goal free -> follow the global waypoints
-      route blocked          -> RRT* to the goal (main loop in rrt()),
-                                straighten the path, follow it instead
-      RRT found nothing      -> stop
-    then Pure Pursuit on the route or on the RRT path
 """
 import numpy as np
 from numpy import linalg as LA
@@ -201,7 +191,7 @@ class RRT(ROSNode):
         """
         LaserScan callback, you should update your occupancy grid here
 
-        Args:
+        Args: 
             scan_msg (LaserScan): incoming message from subscribed topic
         Returns:
 
@@ -222,7 +212,7 @@ class RRT(ROSNode):
         The pose callback when subscribed to particle filter's inferred pose
         Here is where the main RRT loop happens
 
-        Args:
+        Args: 
             pose_msg (PoseStamped): incoming message from subscribed topic
         Returns:
 
@@ -287,7 +277,7 @@ class RRT(ROSNode):
 
     def steer(self, nearest_node, sampled_point):
         """
-        This method should return a point in the viable set such that it is closer
+        This method should return a point in the viable set such that it is closer 
         to the nearest_node than sampled_point is.
 
         Args:
@@ -485,8 +475,6 @@ class RRT(ROSNode):
                         and not self.check_collision(new_node, n):
                     n.parent = new_node
 
-            # remember every node that reaches the goal; keep growing the tree
-            # until MAX_ITER so rewiring can still shorten the path
             if self.is_goal(new_node, goal[0], goal[1]):
                 goal_nodes.append(new_node)
 
@@ -509,7 +497,7 @@ class RRT(ROSNode):
             i = j
         return out
 
-    # ======================= added: occupancy grid =========================
+    # ======================= occupancy grid =========================
     def build_grid(self, scan):
         """True = blocked. Scan hits are obstacles, everything else is free."""
         ranges = np.array(scan.ranges)
@@ -547,7 +535,7 @@ class RRT(ROSNode):
                 return False
         return True
 
-    # ======================= added: route helpers ==========================
+    # ======================= route helpers ==========================
     def update_closest(self):
         """Closest waypoint, searched only a little ahead of the previous one."""
         n = len(self.waypoints)
@@ -581,7 +569,7 @@ class RRT(ROSNode):
             i += 1
         return self.path[i]
 
-    # ======================= added: publishing =============================
+    # ======================= publishing =============================
     def publish_drive(self, steer, speed):
         msg = AckermannDriveStamped()
         msg.drive.steering_angle = float(steer)
@@ -631,14 +619,12 @@ class RRT(ROSNode):
         pub.publish(m)
 
 def main(args=None):
-    # let Ctrl+C raise a plain KeyboardInterrupt (caught below) instead of
-    # rclpy shutting down in the middle of a callback
     rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     print("RRT Initialized")
     rrt_node = RRT()
     try:
         rclpy.spin(rrt_node)
-    except KeyboardInterrupt:   # Ctrl+C
+    except KeyboardInterrupt:
         pass
 
     rrt_node.destroy_node()

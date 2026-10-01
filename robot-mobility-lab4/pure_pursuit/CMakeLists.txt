@@ -57,8 +57,8 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# Install waypoints, launch files and the RViz config
-install(DIRECTORY waypoints launch rviz
+# Install waypoints and launch files
+install(DIRECTORY waypoints launch
   DESTINATION share/${PROJECT_NAME}
 )
 

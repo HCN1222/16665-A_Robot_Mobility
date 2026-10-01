@@ -47,7 +47,7 @@ def make_marker(marker_type, size, rgb):
 
 
 class PurePursuit(Node):
-    """
+    """ 
     Implement Pure Pursuit on the car
     This is just a template, you are free to implement your own node!
     """
@@ -118,14 +118,12 @@ class PurePursuit(Node):
         self.target_pub.publish(m)
 
 def main(args=None):
-    # let Ctrl+C raise a plain KeyboardInterrupt (caught below) instead of
-    # rclpy shutting down in the middle of a callback
     rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
     print("PurePursuit Initialized")
     pure_pursuit_node = PurePursuit()
     try:
         rclpy.spin(pure_pursuit_node)
-    except KeyboardInterrupt:   # Ctrl+C
+    except KeyboardInterrupt:
         pass
 
     pure_pursuit_node.destroy_node()
