@@ -9,13 +9,13 @@ must show.
 **Deliverable A1 (simulation):** Pure Pursuit completing a full lap in sim, with
 both the full waypoint set and the currently tracked waypoint visualized.
 
-[FILL ME IN](https://youtu.be/your-link-here)
+[https://youtu.be/QVxsovMhwDk](https://youtu.be/QVxsovMhwDk)
 
 **Deliverable A3 (team, hardware):** The real car following waypoints in the AI
 Makerspace using the provided particle filter, shown alongside RViz with the map
 and waypoint markers.
 
-[FILL ME IN](https://youtu.be/your-link-here)
+[https://youtu.be/r8tLKzRWAZ4](https://youtu.be/r8tLKzRWAZ4)
 
 ## Part B: Motion Planning (RRT)
 
@@ -23,9 +23,9 @@ and waypoint markers.
 showing obstacle avoidance and a visualization of the planned paths and goal
 point.
 
-[FILL ME IN](https://youtu.be/your-link-here)
+[https://youtu.be/RTa0ZZRp1Og](https://youtu.be/RTa0ZZRp1Og)
 
 **Deliverable B3 (group, hardware):** The car running RRT in the AIMS hallway
 with at least one obstacle, demonstrating obstacle avoidance.
 
-[FILL ME IN](https://youtu.be/your-link-here)
+[https://youtu.be/yrSepmlVHqQ](https://youtu.be/yrSepmlVHqQ)
