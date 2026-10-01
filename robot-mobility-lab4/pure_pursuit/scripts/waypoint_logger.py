@@ -13,10 +13,6 @@ PoseStamped), adapt this node for it as needed.
 By default the CSV is written to the `waypoints/` folder inside the pure_pursuit
 package. Override the location with the `output_file` parameter.
 
-The route is used as a closed loop: drive one full lap and stop close to where
-you started. The points recorded so far are shown in RViz on
-/waypoint_logger/path (visualization_msgs/Marker).
-
 Usage:
   ros2 run pure_pursuit waypoint_logger.py
 """
@@ -27,9 +23,6 @@ import os
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from rclpy.signals import SignalHandlerOptions
-from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point
 
 
 def default_output_file():
@@ -61,7 +54,6 @@ class WaypointLogger(Node):
         self.last_y = None
 
         self.create_subscription(Odometry, '/ego_racecar/odom', self.odom_callback, 10)
-        self.marker_pub = self.create_publisher(Marker, '/waypoint_logger/path', 10)
 
         self.get_logger().info('Waypoint logger started - drive the car!')
         self.get_logger().info(f'Saving to: {self.output_file}')
@@ -78,7 +70,6 @@ class WaypointLogger(Node):
             self.get_logger().info(
                 f'Logged waypoint {len(self.waypoints)}: ({x:.2f}, {y:.2f})')
             self.save_waypoints()
-            self.publish_path()
 
     def save_waypoints(self):
         with open(self.output_file, 'w', newline='') as f:
@@ -86,22 +77,9 @@ class WaypointLogger(Node):
             writer.writerow(['x', 'y'])
             writer.writerows(self.waypoints)
 
-    def publish_path(self):
-        """Show every waypoint recorded so far in RViz."""
-        m = Marker()
-        m.header.frame_id = 'map'
-        m.type = Marker.POINTS
-        m.pose.orientation.w = 1.0
-        m.scale.x = m.scale.y = 0.08
-        m.color.r, m.color.g, m.color.b, m.color.a = 1.0, 0.6, 0.0, 1.0
-        m.points = [Point(x=px, y=py) for px, py in self.waypoints]
-        self.marker_pub.publish(m)
-
 
 def main(args=None):
-    # let Ctrl+C raise a plain KeyboardInterrupt (caught below) instead of
-    # rclpy shutting down in the middle of a callback
-    rclpy.init(args=args, signal_handler_options=SignalHandlerOptions.NO)
+    rclpy.init(args=args)
     node = WaypointLogger()
     try:
         rclpy.spin(node)
