@@ -94,7 +94,7 @@ without collision.
 
 ### Part C: RRT* (extra credit)
 
-`USE_RRT_STAR = True` (switch it off for plain RRT). On top of RRT:
+The planner always runs RRT*. On top of RRT:
 
 * **near**: all tree nodes within `NEAR_RADIUS` (0.6 m) of the new node.
 * **choose parent**: the neighbour giving the lowest `cost(neighbour) + distance`
@@ -105,5 +105,5 @@ without collision.
   up to date after rewiring. Rewiring cannot create a cycle: an ancestor of the
   new node already has a lower cost, so going through the new node is never
   cheaper for it.
-* RRT stops at the first path. RRT* keeps growing the tree for all `MAX_ITER`
-  iterations, then returns the cheapest path to the goal.
+* It does not stop at the first path: the tree keeps growing for all `MAX_ITER`
+  iterations, then the cheapest path to the goal is returned.

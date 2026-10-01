@@ -8,7 +8,7 @@ How it runs (simulator):
   pose_callback  every pose message  : when a new grid is ready, plan():
       goal = waypoint GOAL_DISTANCE ahead on the global route
       route to the goal free -> follow the global waypoints
-      route blocked          -> RRT(*) to the goal (main loop in rrt()),
+      route blocked          -> RRT* to the goal (main loop in rrt()),
                                 straighten the path, follow it instead
       RRT found nothing      -> stop
     then Pure Pursuit on the route or on the RRT path
@@ -18,7 +18,7 @@ from numpy import linalg as LA
 import math
 
 import rclpy
-from rclpy.node import Node as ROSNode    # renamed: the tree node class below is also "Node"
+from rclpy.node import Node as ROSNode
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PointStamped
@@ -56,7 +56,6 @@ MAX_ITER = 300                 # RRT iterations per plan
 STEP = 0.3                     # max length of a new tree edge (m)
 GOAL_BIAS = 0.1                # probability of sampling the goal itself
 GOAL_TOLERANCE = 0.3           # a node this close to the goal may connect to it (m)
-USE_RRT_STAR = True            # False = plain RRT
 NEAR_RADIUS = 0.6              # RRT*: neighbours considered for parent / rewiring (m)
 
 # Pure Pursuit
@@ -422,12 +421,17 @@ class RRT(ROSNode):
             return
 
         # is the route itself (car -> waypoints -> goal) free?
+        n = len(self.waypoints)
+        steps = (goal_i - self.closest) % n          # waypoints from the closest one to the goal
         route = [(0.0, 0.0)]
-        i = self.closest
-        while i != goal_i:
-            i = (i + 1) % len(self.waypoints)
-            route.append(to_car_frame(*self.waypoints[i], pose))
-        if all(self.segment_free(self.grid, a, b) for a, b in zip(route[:-1], route[1:])):
+        for k in range(1, steps + 1):
+            route.append(to_car_frame(*self.waypoints[(self.closest + k) % n], pose))
+        # Pure Pursuit does not drive exactly on the route: it cuts towards its
+        # target point. The straight line car -> target is the most cut-in line,
+        # so it has to be free as well.
+        target = to_car_frame(*self.route_target(ROUTE_LOOKAHEAD), pose)
+        if all(self.segment_free(self.grid, a, b) for a, b in zip(route[:-1], route[1:])) \
+                and self.segment_free(self.grid, (0.0, 0.0), target):
             self.mode = 'route'
             self.path = None
             self.publish_all(pose, [], goal)
@@ -445,7 +449,7 @@ class RRT(ROSNode):
         self.publish_all(pose, tree, goal)
 
     def rrt(self, goal):
-        """The main RRT (or RRT*) loop, from the car (0, 0) to goal, both in the
+        """The main RRT* loop, from the car (0, 0) to goal, both in the
         car frame. Returns (tree, path) with path = list of (x, y), or None."""
         self.goal = goal
         self.x_max = min(goal[0] + 0.5, GRID_X_MAX)  # only sample in front of the car
@@ -464,30 +468,27 @@ class RRT(ROSNode):
                 continue
             new_node.parent = nearest_node
 
-            if USE_RRT_STAR:
-                neighbours = self.near(tree, new_node)
-                # choose parent: the neighbour that gives the shortest path to new_node
-                best = self.cost(tree, nearest_node) + self.line_cost(nearest_node, new_node)
-                for n in neighbours:
-                    c = self.cost(tree, n) + self.line_cost(n, new_node)
-                    if c < best and not self.check_collision(n, new_node):
-                        new_node.parent, best = n, c
+            # choose parent: the neighbour that gives the shortest path to new_node
+            neighbours = self.near(tree, new_node)
+            best = self.cost(tree, nearest_node) + self.line_cost(nearest_node, new_node)
+            for n in neighbours:
+                c = self.cost(tree, n) + self.line_cost(n, new_node)
+                if c < best and not self.check_collision(n, new_node):
+                    new_node.parent, best = n, c
             tree.append(new_node)
 
-            if USE_RRT_STAR:
-                # rewire: a neighbour becomes a child of new_node if that is shorter
-                for n in neighbours:
-                    if n.is_root or n is new_node.parent:
-                        continue
-                    if best + self.line_cost(new_node, n) < self.cost(tree, n) \
-                            and not self.check_collision(new_node, n):
-                        n.parent = new_node
+            # rewire: a neighbour becomes a child of new_node if that is shorter
+            for n in neighbours:
+                if n.is_root or n is new_node.parent:
+                    continue
+                if best + self.line_cost(new_node, n) < self.cost(tree, n) \
+                        and not self.check_collision(new_node, n):
+                    n.parent = new_node
 
+            # remember every node that reaches the goal; keep growing the tree
+            # until MAX_ITER so rewiring can still shorten the path
             if self.is_goal(new_node, goal[0], goal[1]):
                 goal_nodes.append(new_node)
-                if not USE_RRT_STAR:
-                    break                    # RRT: the first path is good enough
-                # RRT*: keep growing the tree until MAX_ITER to improve the path
 
         if not goal_nodes:
             return tree, None
