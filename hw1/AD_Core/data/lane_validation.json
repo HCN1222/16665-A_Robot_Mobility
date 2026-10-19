@@ -1,0 +1,67 @@
+{
+  "Q": [
+    0.1811228190184231,
+    0.0003019884889917931,
+    5.588445987846785,
+    0.18700223381189277
+  ],
+  "R": 1,
+  "K": [
+    0.425585266448949,
+    0.05773618123347869,
+    3.2726158039324833,
+    0.3854173480194804
+  ],
+  "closed_loop_poles": [
+    {
+      "real": -25.120346739707976,
+      "imag": 0.0
+    },
+    {
+      "real": -10.38059734530705,
+      "imag": 0.0
+    },
+    {
+      "real": -3.8219851348011127,
+      "imag": 3.188956992315194
+    },
+    {
+      "real": -3.8219851348011127,
+      "imag": -3.188956992315194
+    }
+  ],
+  "sample_interval_s": 0.01,
+  "verification_interval_s": 0.0001,
+  "solver_max_difference": 1.7068568780587157e-12,
+  "geometry_max_difference": 4.510281037539698e-16,
+  "max_e1_m": 0.09204311295676744,
+  "max_e2_rad": 0.009523591809040336,
+  "max_continuous_steering_rate_rad_s": 23.808624691798343,
+  "max_sampled_steering_rate_rad_s": 11.641848569611016,
+  "settling_s": [
+    0.9973333333333335,
+    0.9973333333333341
+  ],
+  "at_nominal_X100": {
+    "X": 100.00030675185799,
+    "Y": 0.08623917010018316,
+    "heading": -0.0035569749099994942
+  },
+  "at_simulation_end": {
+    "X": 180.00000000000347,
+    "Y": 4.874823969397577e-06,
+    "heading": -7.097763505624486e-07
+  },
+  "max_heading_error_against_ideal_tangent_rad": 0.055498616535036745,
+  "continuous_heading_corner_lower_bound_rad": 0.027749252622858416,
+  "course_model_checks": {
+    "heading": true,
+    "steering_rate": true,
+    "settling": true,
+    "initial_state": true
+  },
+  "literal_checks": {
+    "ideal_tangent_heading": false,
+    "X100_within_error_bands": false
+  }
+}
